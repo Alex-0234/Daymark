@@ -1,34 +1,56 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import { useState } from 'react'
+import Rail from './components/Rail'
+import Page from './components/Page'
+import Dashboard from './components/Dashboard'
+import { coreFeatures, features } from './features'
+import { day, sampleItems } from './data'
 
 function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+  const [enabled, setEnabled] = useState(coreFeatures)
+  const [active, setActive] = useState('dashboard')
+  const [items, setItems] = useState(sampleItems)
+  const feature = features.find((f) => f.id === active)
+  const visible = items.filter((i) => enabled.includes(i.feature))
+
+  const enable = (id: string): void => {
+    setEnabled([...enabled, id])
+    setActive(id)
+  }
+
+  const add = (featureId: string): void =>
+    setItems([
+      ...items,
+      {
+        id: crypto.randomUUID(),
+        feature: featureId,
+        title: 'Untitled',
+        date: day(0),
+        done: false,
+        values: {}
+      }
+    ])
+
+  const toggle = (id: string): void =>
+    setItems(items.map((i) => (i.id === id ? { ...i, done: !i.done } : i)))
+
+  const remove = (id: string): void => setItems(items.filter((i) => i.id !== id))
 
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+    <div className="flex h-screen w-full font-sans">
+      <Rail enabled={enabled} active={active} onSelect={setActive} onAdd={enable} />
+      {feature ? (
+        <Page
+          key={feature.id}
+          feature={feature}
+          items={items.filter((i) => i.feature === feature.id)}
+          onAdd={() => add(feature.id)}
+          onToggle={toggle}
+          onRemove={remove}
+        />
+      ) : (
+        <Dashboard items={visible} enabled={enabled} onOpen={setActive} />
+      )}
+    </div>
   )
 }
 
