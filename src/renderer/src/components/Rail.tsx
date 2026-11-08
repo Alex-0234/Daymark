@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { LayoutDashboard, Plus, Settings as SettingsIcon } from 'lucide-react'
 import { features } from '../features'
+import { useTheme } from '../theme'
 import Settings from './Settings'
 
 type Props = {
@@ -14,27 +15,25 @@ function Rail({ enabled, active, onSelect, onAdd }: Props): React.JSX.Element {
   const [wide, setWide] = useState(false)
   const [open, setOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [theme, setTheme] = useTheme()
   const available = features.filter((f) => !enabled.includes(f.id))
-  const item = `flex h-9 items-center gap-2 transition-all ${wide ? 'w-full rounded-lg px-2' : 'w-9 justify-center'}`
-  const round = wide ? '' : 'rounded-2xl hover:rounded-xl'
+  const item = `flex h-9 items-center gap-2.5 rounded-lg text-sm transition-all ${wide ? 'w-full px-2.5' : 'w-9 justify-center'}`
+  const idle = 'text-muted hover:bg-raised hover:text-fg'
+  const current = 'bg-raised text-fg shadow-panel'
 
   return (
     <nav
-      className={`flex shrink-0 flex-col items-center gap-2 bg-[#1e1f22] py-3 transition-all ${wide ? 'w-44 px-2' : 'w-12'}`}
+      className={`flex shrink-0 flex-col items-center gap-1.5 border-r border-line bg-panel py-3 transition-all ${wide ? 'w-48 px-2' : 'w-14'}`}
     >
       <button
         onClick={() => onSelect('dashboard')}
         title="Dashboard"
-        className={`${item} shrink-0 ${
-          active === 'dashboard'
-            ? `bg-white text-[#1e1f22] ${wide ? '' : 'rounded-xl'}`
-            : `bg-[#313338] text-zinc-300 hover:bg-white hover:text-[#1e1f22] ${round}`
-        }`}
+        className={`${item} ${active === 'dashboard' ? current : idle}`}
       >
-        <LayoutDashboard size={20} className="shrink-0" />
-        {wide && <span className="text-sm">Dashboard</span>}
+        <LayoutDashboard size={18} className="shrink-0" />
+        {wide && <span>Dashboard</span>}
       </button>
-      <div className="h-0.5 w-8 rounded bg-white/10" />
+      <div className={`my-1 h-px bg-line ${wide ? 'w-full' : 'w-6'}`} />
 
       {features
         .filter((f) => enabled.includes(f.id))
@@ -43,14 +42,13 @@ function Rail({ enabled, active, onSelect, onAdd }: Props): React.JSX.Element {
             key={f.id}
             onClick={() => onSelect(f.id)}
             title={f.name}
-            className={`${item} ${
-              f.id === active
-                ? `text-white ${f.color} ${wide ? '' : 'rounded-xl'}`
-                : `bg-[#313338] text-zinc-300 hover:text-white ${f.hover} ${round}`
-            }`}
+            className={`${item} ${f.id === active ? current : idle}`}
           >
-            <f.icon size={20} className="shrink-0" />
-            {wide && <span className="truncate text-sm">{f.name}</span>}
+            <f.icon
+              size={18}
+              className={`shrink-0 ${f.id === active ? `${f.text} drop-shadow-[0_0_6px_currentColor]` : ''}`}
+            />
+            {wide && <span className="truncate">{f.name}</span>}
           </button>
         ))}
 
@@ -59,14 +57,16 @@ function Rail({ enabled, active, onSelect, onAdd }: Props): React.JSX.Element {
           <button
             onClick={() => setOpen(!open)}
             title="Add module"
-            className={`${item} ${round} bg-[#313338] text-emerald-400 hover:bg-emerald-500 hover:text-white`}
+            className={`${item} border border-dashed border-line-strong text-subtle hover:border-muted hover:text-fg`}
           >
-            <Plus size={20} className="shrink-0" />
-            {wide && <span className="text-sm">Add module</span>}
+            <Plus size={18} className="shrink-0" />
+            {wide && <span>Add module</span>}
           </button>
           {open && (
-            <div className="absolute top-0 left-full z-10 ml-2 w-52 rounded-lg bg-[#111214] p-2 shadow-xl">
-              <p className="px-2 pb-1 text-xs font-semibold text-zinc-400 uppercase">Add module</p>
+            <div className="absolute top-0 left-full z-10 ml-3 w-52 rounded-xl bg-panel p-1.5 shadow-pop">
+              <p className="px-2 py-1.5 text-[11px] font-medium tracking-wider text-subtle uppercase">
+                Add module
+              </p>
               {available.map((f) => (
                 <button
                   key={f.id}
@@ -74,9 +74,9 @@ function Rail({ enabled, active, onSelect, onAdd }: Props): React.JSX.Element {
                     onAdd(f.id)
                     setOpen(false)
                   }}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-zinc-200 hover:bg-indigo-500"
+                  className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted hover:bg-raised hover:text-fg"
                 >
-                  <f.icon size={16} />
+                  <f.icon size={16} className={f.text} />
                   {f.name}
                 </button>
               ))}
@@ -88,14 +88,20 @@ function Rail({ enabled, active, onSelect, onAdd }: Props): React.JSX.Element {
       <button
         onClick={() => setSettingsOpen(true)}
         title="Settings"
-        className={`${item} mt-auto rounded-xl text-zinc-400 hover:bg-white/10 hover:text-zinc-200`}
+        className={`${item} mt-auto ${idle}`}
       >
-        <SettingsIcon size={20} className="shrink-0" />
-        {wide && <span className="text-sm">Settings</span>}
+        <SettingsIcon size={18} className="shrink-0" />
+        {wide && <span>Settings</span>}
       </button>
 
       {settingsOpen && (
-        <Settings wide={wide} onWideChange={setWide} onClose={() => setSettingsOpen(false)} />
+        <Settings
+          wide={wide}
+          onWideChange={setWide}
+          theme={theme}
+          onThemeChange={setTheme}
+          onClose={() => setSettingsOpen(false)}
+        />
       )}
     </nav>
   )

@@ -1,34 +1,35 @@
 import { Plus } from 'lucide-react'
 import type { Feature } from '../features'
-import type { Item } from '../data'
+import { useList } from '../context/useList'
 import Calendar from './Calendar'
 import Rows from './Rows'
 
 type Props = {
   feature: Feature
-  items: Item[]
-  onAdd: () => void
-  onToggle: (id: string) => void
-  onRemove: (id: string) => void
 }
 
-function Page({ feature, items, onAdd, onToggle, onRemove }: Props): React.JSX.Element {
+function Page({ feature }: Props): React.JSX.Element | null {
+  const { lists, addItem } = useList()
+  const list = lists.find((l) => l.feature === feature.id)
+  if (!list) return null
+
   return (
-    <main className="flex min-w-0 flex-1 flex-col bg-[#313338]">
-      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-black/20 px-4 font-semibold text-white">
-        <feature.icon size={18} className="text-zinc-400" />
-        {feature.name}
+    <main className="flex min-w-0 flex-1 flex-col bg-bg">
+      <header className="flex h-12 shrink-0 items-center gap-2.5 border-b border-line px-5">
+        <feature.icon size={16} className={feature.text} />
+        <h1 className="glow text-sm font-semibold text-fg">{list.name}</h1>
+        <span className="text-xs text-subtle tabular-nums">{list.items.length}</span>
         <button
-          onClick={onAdd}
-          className="ml-auto flex items-center gap-1.5 rounded px-2 py-1 text-sm font-normal text-zinc-300 hover:bg-white/10 hover:text-white"
+          onClick={() => addItem(list.id)}
+          className="ml-auto flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-fg shadow-panel transition-opacity hover:opacity-90"
         >
-          <Plus size={16} />
+          <Plus size={14} />
           New
         </button>
       </header>
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        <Calendar items={items} />
-        <Rows feature={feature} items={items} onToggle={onToggle} onRemove={onRemove} />
+      <div className="flex-1 space-y-5 overflow-y-auto p-5">
+        <Calendar lists={[list]} />
+        <Rows list={list} />
       </div>
     </main>
   )
