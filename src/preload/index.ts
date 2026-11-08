@@ -1,12 +1,34 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { Api } from '../shared/types'
 
-// Custom APIs for renderer
-const api = {}
+const api: Api = {
+  modules: {
+    enabled: () => ipcRenderer.invoke('modules:enabled'),
+    enable: (id) => ipcRenderer.invoke('modules:enable', id)
+  },
+  cali: {
+    exercises: () => ipcRenderer.invoke('cali:exercises'),
+    routines: () => ipcRenderer.invoke('cali:routines'),
+    saveRoutine: (routine) => ipcRenderer.invoke('cali:saveRoutine', routine),
+    removeRoutine: (id) => ipcRenderer.invoke('cali:removeRoutine', id),
+    workouts: () => ipcRenderer.invoke('cali:workouts'),
+    saveWorkout: (workout) => ipcRenderer.invoke('cali:saveWorkout', workout),
+    removeWorkout: (id) => ipcRenderer.invoke('cali:removeWorkout', id),
+    draft: () => ipcRenderer.invoke('cali:draft'),
+    saveDraft: (draft) => ipcRenderer.invoke('cali:saveDraft', draft)
+  },
+  lists: {
+    all: () => ipcRenderer.invoke('lists:all'),
+    setColumns: (listId, columns) => ipcRenderer.invoke('lists:setColumns', listId, columns)
+  },
+  items: {
+    create: (listId) => ipcRenderer.invoke('items:create', listId),
+    update: (id, patch) => ipcRenderer.invoke('items:update', id, patch),
+    remove: (id) => ipcRenderer.invoke('items:remove', id)
+  }
+}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)

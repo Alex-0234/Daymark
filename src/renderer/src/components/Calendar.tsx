@@ -1,5 +1,5 @@
 import { features } from '../features'
-import { day, formatDate, type List } from '../data'
+import { day, formatDate, weekday, type List } from '../data'
 
 type Props = {
   lists: List[]
@@ -38,7 +38,9 @@ function Calendar({ lists }: Props): React.JSX.Element {
 
       <div className="grid min-w-0 flex-1 grid-cols-7 gap-2">
         {days.map((d, i) => {
-          const dayItems = upcoming.filter((item) => item.date === d)
+          const dayItems = upcoming.filter(
+            (item) => item.date === d || (item.date < d && item.repeat.includes(weekday(d)))
+          )
           const date = new Date(`${d}T00:00`)
           return (
             <div

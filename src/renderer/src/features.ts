@@ -25,7 +25,7 @@ export const features: Feature[] = [
   },
   {
     id: 'workout',
-    name: 'Workout',
+    name: 'Calisthenics',
     icon: Dumbbell,
     color: 'bg-orange-400',
     text: 'text-orange-400'

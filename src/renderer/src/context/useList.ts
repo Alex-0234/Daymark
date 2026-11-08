@@ -1,12 +1,15 @@
 import { createContext, useContext } from 'react'
-import type { List } from '../data'
+import type { Item, ItemPatch, List } from '../data'
 
 type ListContextValue = {
   lists: List[]
-  addItem: (listId: string) => void
-  toggleItem: (listId: string, itemId: string) => void
+  loaded: boolean
+  addItem: (listId: string) => Promise<Item>
+  updateItem: (listId: string, itemId: string, patch: ItemPatch) => void
+  completeItem: (listId: string, itemId: string) => void
   removeItem: (listId: string, itemId: string) => void
   resizeColumn: (listId: string, key: string, width: number) => void
+  saveColumns: (listId: string) => void
 }
 
 export const ListContext = createContext<ListContextValue | null>(null)
