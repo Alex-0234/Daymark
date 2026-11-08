@@ -12,6 +12,8 @@ type ExerciseRow = {
   tier: number
   unit: string
   requires: string
+  modifiers: string
+  is_explosive: number
 }
 type RoutineRow = { id: string; name: string; description: string; exercises: string }
 type WorkoutRow = {
@@ -23,10 +25,12 @@ type WorkoutRow = {
   data: string
 }
 
-const toExercise = (r: ExerciseRow): Exercise => ({
+const toExercise = ({ is_explosive, ...r }: ExerciseRow): Exercise => ({
   ...r,
   unit: r.unit as Unit,
-  requires: JSON.parse(r.requires)
+  requires: JSON.parse(r.requires),
+  modifiers: JSON.parse(r.modifiers),
+  isExplosive: is_explosive === 1
 })
 
 const toRoutine = (r: RoutineRow): Routine => ({ ...r, exercises: JSON.parse(r.exercises) })
@@ -67,16 +71,30 @@ export const calisthenics: MainModule = {
         finished_at TEXT NOT NULL,
         duration INTEGER NOT NULL,
         data TEXT NOT NULL
-      );`)
+      );`),
+    () => db.exec('DELETE FROM cali_exercises'),
+    () =>
+      db.exec(`ALTER TABLE cali_exercises ADD COLUMN modifiers TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE cali_exercises ADD COLUMN is_explosive INTEGER NOT NULL DEFAULT 0;`)
   ],
 
   seed: () => {
     const insert = db.prepare(
-      'INSERT OR REPLACE INTO cali_exercises (id, name, category, branch, tier, unit, requires) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO cali_exercises (id, name, category, branch, tier, unit, requires, modifiers, is_explosive) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     )
     db.transaction(() => {
       for (const e of exercises)
-        insert.run(e.id, e.name, e.category, e.branch, e.tier, e.unit, JSON.stringify(e.requires))
+        insert.run(
+          e.id,
+          e.name,
+          e.category,
+          e.branch,
+          e.tier,
+          e.unit,
+          JSON.stringify(e.requires),
+          JSON.stringify(e.modifiers),
+          e.isExplosive ? 1 : 0
+        )
     })()
   },
 

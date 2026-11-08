@@ -1,8 +1,9 @@
-import type { Draft, Exercise, Workout } from '../../../../shared/cali'
+import type { Draft, Exercise, LoggedSet, Workout } from '../../../../shared/cali'
 
 export type {
   Draft,
   Exercise,
+  LoggedSet,
   Routine,
   SessionExercise,
   SetEntry,
@@ -32,6 +33,9 @@ export const unitLabel = (exercise?: Exercise): string =>
 export const formatValue = (value: number, exercise?: Exercise): string =>
   exercise?.unit === 'seconds' ? `${value}s` : `${value}`
 
+export const formatSet = (set: LoggedSet, exercise?: Exercise): string =>
+  formatValue(set.value, exercise) + (set.extraWeight > 0 ? ` +${set.extraWeight}kg` : '')
+
 export const formatClock = (seconds: number): string => {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -55,7 +59,7 @@ export const totalSets = (workout: Workout): number =>
 export const totalReps = (workout: Workout, byId: ExerciseMap): number =>
   workout.exercises.reduce(
     (sum, e) =>
-      byId[e.exerciseId]?.unit === 'seconds' ? sum : sum + e.sets.reduce((a, b) => a + b, 0),
+      byId[e.exerciseId]?.unit === 'seconds' ? sum : sum + e.sets.reduce((a, s) => a + s.value, 0),
     0
   )
 
@@ -68,7 +72,9 @@ export const draftToWorkout = (draft: Draft, finishedAt: string): Workout => ({
   exercises: draft.exercises
     .map((e) => ({
       exerciseId: e.exerciseId,
-      sets: e.sets.filter((s) => s.done && s.value).map((s) => s.value as number)
+      sets: e.sets
+        .filter((s) => s.done && s.value)
+        .map((s) => ({ value: s.value as number, extraWeight: s.extraWeight ?? 0 }))
     }))
     .filter((e) => e.sets.length > 0)
 })

@@ -1,8 +1,8 @@
 import { Trophy } from 'lucide-react'
 import { useCali } from './useCali'
-import { calculateLevel, workoutXp } from './stats'
+import { calculateLevel, setXp, workoutXp } from '../../utils/level'
 import { Bar, Button, Label, Modal, TierBadge } from './ui'
-import { formatDuration, formatValue, totalReps, totalSets, type Workout } from './utils'
+import { formatDuration, formatSet, totalReps, totalSets, type Workout } from './utils'
 
 function Summary({
   workout,
@@ -12,7 +12,7 @@ function Summary({
   onClose: () => void
 }): React.JSX.Element {
   const { byId, workouts } = useCali()
-  const xp = workoutXp(workout, byId)
+  const xp = Math.round(workoutXp(workout, byId))
   const level = calculateLevel(workouts, byId)
   const before = calculateLevel(
     workouts.filter((w) => w.id !== workout.id),
@@ -47,10 +47,10 @@ function Summary({
           <div className="mb-1.5 flex justify-between text-xs">
             <span className="text-muted">Level {level.level}</span>
             <span className="text-subtle tabular-nums">
-              {level.xp - level.start} / {level.next - level.start}
+              {Math.round(level.xp)} / {Math.round(level.needed)}
             </span>
           </div>
-          <Bar value={level.xp - level.start} max={level.next - level.start} />
+          <Bar value={level.progress} max={1} />
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -74,8 +74,13 @@ function Summary({
                 <TierBadge tier={exercise?.tier ?? 0} />
                 <span className="min-w-0 flex-1 truncate text-sm text-fg">{exercise?.name}</span>
                 <span className="text-xs text-muted tabular-nums">
-                  {e.sets.map((v) => formatValue(v, exercise)).join(' · ')}
+                  {e.sets.map((s) => formatSet(s, exercise)).join(' · ')}
                 </span>
+                {exercise && (
+                  <span className="w-12 text-right font-mono text-xs text-subtle tabular-nums">
+                    +{Math.round(e.sets.reduce((sum, s) => sum + setXp(exercise, s), 0))}
+                  </span>
+                )}
               </li>
             )
           })}

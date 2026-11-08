@@ -11,7 +11,7 @@ import {
   X
 } from 'lucide-react'
 import { useCali } from './useCali'
-import { workoutXp } from './stats'
+import { workoutXp } from '../../utils/level'
 import { Button, Elapsed, Label, TierBadge } from './ui'
 import ExercisePicker from './ExercisePicker'
 import {
@@ -19,11 +19,13 @@ import {
   categoryName,
   draftToWorkout,
   formatClock,
-  formatValue,
+  formatSet,
   totalReps,
   totalSets,
   unitLabel,
+  type LoggedSet,
   type SessionExercise,
+  type SetEntry,
   type Workout
 } from './utils'
 
@@ -95,13 +97,41 @@ function ExerciseBlock({
   const prev = previous(entry.exerciseId)
   const doneCount = entry.sets.filter((s) => s.done).length
 
-  const check = (setId: string, value: number | null, done: boolean, fallback?: number): void => {
-    if (done) return updateSet(entry.id, setId, { done: false })
-    const final = value ?? fallback ?? null
-    if (!final) return
-    updateSet(entry.id, setId, { value: final, done: true })
+  const check = (set: SetEntry, fallback?: LoggedSet): void => {
+    if (set.done) return updateSet(entry.id, set.id, { done: false })
+    const value = set.value ?? fallback?.value ?? null
+    if (!value) return
+    const extraWeight = set.extraWeight ?? fallback?.extraWeight ?? 0
+    updateSet(entry.id, set.id, { value, extraWeight, done: true })
     onRest()
   }
+
+  const input = (
+    set: SetEntry,
+    field: 'value' | 'extraWeight',
+    placeholder: string,
+    step?: number
+  ): React.JSX.Element => (
+    <input
+      type="number"
+      min={0}
+      step={step}
+      inputMode={step ? 'decimal' : 'numeric'}
+      value={set[field] ?? ''}
+      placeholder={placeholder}
+      onChange={(e) =>
+        updateSet(entry.id, set.id, {
+          [field]: e.target.value === '' ? null : Math.max(0, Number(e.target.value))
+        })
+      }
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') check(set, prev[entry.sets.indexOf(set)])
+      }}
+      className={`h-8 w-full rounded-md border bg-bg px-2 text-sm font-medium tabular-nums outline-none select-text placeholder:text-subtle [appearance:textfield] focus:border-muted [&::-webkit-inner-spin-button]:appearance-none ${
+        set.done ? 'border-transparent text-fg' : 'border-line-strong text-fg'
+      }`}
+    />
+  )
 
   return (
     <section className="rounded-xl bg-panel shadow-panel">
@@ -146,9 +176,10 @@ function ExerciseBlock({
         </div>
       </header>
 
-      <div className="grid grid-cols-[3rem_1fr_1fr_3rem] px-2 text-[11px] font-medium tracking-wider text-subtle uppercase">
+      <div className="grid grid-cols-[3rem_1fr_5rem_1fr_3rem] px-2 text-[11px] font-medium tracking-wider text-subtle uppercase">
         <span className="py-1.5 text-center">Set</span>
         <span className="py-1.5 pl-2">Previous</span>
+        <span className="py-1.5 pl-2">+kg</span>
         <span className="py-1.5 pl-2">{unitLabel(exercise)}</span>
         <span className="py-1.5 text-center">
           <Check size={12} className="inline" />
@@ -159,7 +190,7 @@ function ExerciseBlock({
         {entry.sets.map((s, i) => (
           <div
             key={s.id}
-            className={`group grid grid-cols-[3rem_1fr_1fr_3rem] items-center rounded-lg transition-colors ${
+            className={`group grid grid-cols-[3rem_1fr_5rem_1fr_3rem] items-center rounded-lg transition-colors ${
               s.done ? 'bg-fg/[0.05]' : ''
             }`}
           >
@@ -180,31 +211,15 @@ function ExerciseBlock({
               </button>
             </div>
             <span className="pl-2 text-sm text-subtle tabular-nums">
-              {prev[i] !== undefined ? formatValue(prev[i], exercise) : '—'}
+              {prev[i] ? formatSet(prev[i], exercise) : '—'}
             </span>
             <div className="px-1">
-              <input
-                type="number"
-                min={0}
-                inputMode="numeric"
-                value={s.value ?? ''}
-                placeholder={prev[i] !== undefined ? String(prev[i]) : '0'}
-                onChange={(e) =>
-                  updateSet(entry.id, s.id, {
-                    value: e.target.value === '' ? null : Math.max(0, Number(e.target.value))
-                  })
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') check(s.id, s.value, s.done, prev[i])
-                }}
-                className={`h-8 w-full rounded-md border bg-bg px-2 text-sm font-medium tabular-nums outline-none select-text placeholder:text-subtle [appearance:textfield] focus:border-muted [&::-webkit-inner-spin-button]:appearance-none ${
-                  s.done ? 'border-transparent text-fg' : 'border-line-strong text-fg'
-                }`}
-              />
+              {input(s, 'extraWeight', String(prev[i]?.extraWeight || 0), 0.5)}
             </div>
+            <div className="px-1">{input(s, 'value', String(prev[i]?.value ?? 0))}</div>
             <div className="flex justify-center">
               <button
-                onClick={() => check(s.id, s.value, s.done, prev[i])}
+                onClick={() => check(s, prev[i])}
                 className={`flex h-7 w-7 items-center justify-center rounded-md border transition-all ${
                   s.done
                     ? 'border-accent bg-accent text-accent-fg shadow-[0_0_12px_-2px_var(--accent)]'
@@ -239,7 +254,7 @@ function Session({ onBack, onFinish }: Props): React.JSX.Element | null {
 
   const live = draftToWorkout(draft, draft.startedAt)
   const sets = totalSets(live)
-  const xp = workoutXp(live, byId)
+  const xp = Math.round(workoutXp(live, byId))
 
   const finish = (): void => {
     const workout = finishWorkout()

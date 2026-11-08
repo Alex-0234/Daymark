@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { buildProgress } from '../../utils/workout'
 import { CaliContext } from './useCali'
 import {
   draftToWorkout,
   uid,
   type Draft,
   type Exercise,
+  type LoggedSet,
   type Routine,
   type SessionExercise,
   type SetEntry,
@@ -35,6 +37,10 @@ export function CaliProvider({ children }: { children: React.ReactNode }): React
   }, [])
 
   const byId = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises])
+  const progress = useMemo(
+    () => buildProgress(workouts, exercises, byId),
+    [workouts, exercises, byId]
+  )
 
   const commit = (next: Draft | null): void => {
     latest.current = next
@@ -52,12 +58,12 @@ export function CaliProvider({ children }: { children: React.ReactNode }): React
       exercises: d.exercises.map((e) => (e.id === entryId ? change(e) : e))
     }))
 
-  const previous = (exerciseId: string): number[] =>
+  const previous = (exerciseId: string): LoggedSet[] =>
     workouts
       .find((w) => w.exercises.some((e) => e.exerciseId === exerciseId))
       ?.exercises.find((e) => e.exerciseId === exerciseId)?.sets ?? []
 
-  const newSet = (): SetEntry => ({ id: uid(), value: null, done: false })
+  const newSet = (): SetEntry => ({ id: uid(), value: null, extraWeight: null, done: false })
 
   const entry = (exerciseId: string): SessionExercise => ({
     id: uid(),
@@ -101,6 +107,7 @@ export function CaliProvider({ children }: { children: React.ReactNode }): React
         byId,
         routines,
         workouts,
+        progress,
         draft,
         previous,
         startWorkout,

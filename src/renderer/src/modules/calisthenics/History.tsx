@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useCali } from './useCali'
-import { workoutXp } from './stats'
+import { workoutXp } from '../../utils/level'
 import { Button, Card, TierBadge } from './ui'
-import { formatDay, formatDuration, formatValue, totalReps, totalSets } from './utils'
+import { formatDay, formatDuration, formatSet, totalReps, totalSets } from './utils'
 
 function History(): React.JSX.Element {
   const { workouts, byId, removeWorkout } = useCali()
@@ -25,7 +25,7 @@ function History(): React.JSX.Element {
               </p>
             </div>
             <span className="font-mono text-sm font-semibold text-fg">
-              +{workoutXp(w, byId)} XP
+              +{Math.round(workoutXp(w, byId))} XP
             </span>
             {deleting === w.id ? (
               <Button variant="danger" onClick={() => removeWorkout(w.id)}>
@@ -45,7 +45,7 @@ function History(): React.JSX.Element {
                   <TierBadge tier={exercise?.tier ?? 0} />
                   <span className="min-w-0 flex-1 truncate text-muted">{exercise?.name}</span>
                   <span className="text-subtle tabular-nums">
-                    {e.sets.map((v) => formatValue(v, exercise)).join(' · ')}
+                    {e.sets.map((s) => formatSet(s, exercise)).join(' · ')}
                   </span>
                 </li>
               )

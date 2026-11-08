@@ -1,6 +1,7 @@
 import { Flame, Play } from 'lucide-react'
 import { useCali } from './useCali'
-import { STATS, calculateEp, calculateLevel, calculateStats, rankTitle, workoutXp } from './stats'
+import { MAX_LEVEL, calculateEp, calculateLevel, rankTitle, workoutXp } from '../../utils/level'
+import { AP_STATES, STATS, calculatePlayerStats } from '../../utils/stats'
 import { Bar, Button, Card, Elapsed, Label, TierBadge } from './ui'
 import { CATEGORIES, formatDay, formatDuration, formatValue, totalSets } from './utils'
 import { day, toDay } from '../../data'
@@ -36,13 +37,11 @@ function LevelRing({ level, progress }: { level: number; progress: number }): Re
 }
 
 function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
-  const { workouts, byId, draft } = useCali()
-  const stats = calculateStats(workouts, byId)
+  const { workouts, exercises, byId, progress, draft } = useCali()
+  const stats = calculatePlayerStats(workouts, exercises, progress)
   const level = calculateLevel(workouts, byId)
-  const ep = calculateEp(workouts, byId)
-  const power = Math.round(Object.values(stats).reduce((a, b) => a + b, 0) / 6)
-  const levelXp = level.xp - level.start
-  const levelSpan = level.next - level.start
+  const ep = calculateEp(level.total)
+  const power = Math.round(STATS.reduce((a, s) => a + stats[s.key], 0) / STATS.length)
 
   const week = Array.from({ length: 7 }, (_, i) => day(i - 6))
   const trainedDays = new Set(workouts.map((w) => toDay(new Date(w.finishedAt))))
@@ -54,7 +53,7 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
       for (const e of w.exercises) {
         const ex = byId[e.exerciseId]
         if (ex?.category !== c.id) continue
-        const value = Math.max(...e.sets)
+        const value = Math.max(...e.sets.map((s) => s.value))
         if (!best || ex.tier > best.tier || (ex.tier === best.tier && value > best.value))
           best = { id: ex.id, tier: ex.tier, value }
       }
@@ -72,15 +71,16 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
         </div>
 
         <div className="relative flex items-center gap-4 px-5 pt-4">
-          <LevelRing level={level.level} progress={levelXp / levelSpan} />
+          <LevelRing level={level.level} progress={level.progress} />
           <div className="min-w-0 flex-1">
             <p className="glow truncate text-xl font-bold tracking-tight text-fg">
               {rankTitle(level.level)}
             </p>
             <p className="mb-2 text-xs text-muted tabular-nums">
-              {levelXp} / {levelSpan} XP
+              {level.level >= MAX_LEVEL ? 'MAX' : Math.round(level.xp)} / {Math.round(level.needed)}{' '}
+              XP
             </p>
-            <Bar value={levelXp} max={levelSpan} className="h-1" />
+            <Bar value={level.progress} max={1} className="h-1" />
           </div>
         </div>
 
@@ -88,7 +88,7 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
           {[
             ['EP', ep],
             ['Sessions', workouts.length],
-            ['Total XP', level.xp]
+            ['Total XP', Math.round(level.total)]
           ].map(([label, value]) => (
             <div key={label}>
               <Label>{label}</Label>
@@ -108,7 +108,7 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
                 className="font-mono text-xs font-bold tracking-widest"
                 style={{ color: s.color, textShadow: `0 0 10px ${s.color}88` }}
               >
-                {s.abbr}
+                {s.key}
               </span>
               <div className="min-w-0">
                 <p className="mb-1 truncate text-xs text-muted">{s.name}</p>
@@ -119,6 +119,7 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
               </span>
             </li>
           ))}
+          <li className="text-[11px] leading-relaxed text-subtle">{AP_STATES[stats.apState]}</li>
         </ul>
       </Card>
 
@@ -222,7 +223,9 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
                     {formatDay(w.finishedAt)} · {formatDuration(w.duration)} · {totalSets(w)} sets
                   </span>
                 </span>
-                <span className="shrink-0 font-mono text-muted">+{workoutXp(w, byId)}</span>
+                <span className="shrink-0 font-mono text-muted">
+                  +{Math.round(workoutXp(w, byId))}
+                </span>
               </li>
             ))}
             {workouts.length === 0 && <li className="text-xs text-subtle">Nothing logged yet.</li>}

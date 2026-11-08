@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
-import type { Draft, Exercise, ExerciseMap, Routine, SetEntry, Workout } from './utils'
+import type { Progress } from '../../utils/workout'
+import type { Draft, Exercise, ExerciseMap, LoggedSet, Routine, SetEntry, Workout } from './utils'
 
 type CaliContextValue = {
   loaded: boolean
@@ -7,8 +8,9 @@ type CaliContextValue = {
   byId: ExerciseMap
   routines: Routine[]
   workouts: Workout[]
+  progress: Progress
   draft: Draft | null
-  previous: (exerciseId: string) => number[]
+  previous: (exerciseId: string) => LoggedSet[]
   startWorkout: (routine?: Routine) => void
   renameWorkout: (name: string) => void
   addExercises: (ids: string[]) => void

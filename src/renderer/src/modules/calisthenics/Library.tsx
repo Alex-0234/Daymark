@@ -1,16 +1,21 @@
 import { useState } from 'react'
 import { useCali } from './useCali'
-import { Card, TierBadge } from './ui'
+import { Bar, Card, TierBadge } from './ui'
 import { CATEGORIES, formatValue } from './utils'
+import { getProficiency } from '../../utils/proficiency'
+import { MODIFIERS } from '../../../../shared/cali'
 
 function Library(): React.JSX.Element {
-  const { exercises, workouts } = useCali()
+  const { exercises, workouts, progress } = useCali()
   const [category, setCategory] = useState(CATEGORIES[0].id)
   const list = exercises.filter((e) => e.category === category)
 
   const history = (id: string): { best: number; sessions: number } => {
     const sets = workouts.flatMap((w) => w.exercises.filter((e) => e.exerciseId === id))
-    return { best: Math.max(0, ...sets.flatMap((e) => e.sets)), sessions: sets.length }
+    return {
+      best: Math.max(0, ...sets.flatMap((e) => e.sets.map((s) => s.value))),
+      sessions: sets.length
+    }
   }
 
   return (
@@ -32,6 +37,7 @@ function Library(): React.JSX.Element {
       <Card className="overflow-hidden">
         {list.map((e, i) => {
           const { best, sessions } = history(e.id)
+          const proficiency = getProficiency(progress[e.id]?.totalReps ?? 0)
           return (
             <div
               key={e.id}
@@ -48,9 +54,15 @@ function Library(): React.JSX.Element {
                 <p className={`truncate text-sm ${sessions > 0 ? 'text-fg' : 'text-muted'}`}>
                   {e.name}
                 </p>
-                <p className="text-xs text-subtle capitalize">
-                  {e.branch} · {e.unit}
+                <p className="truncate text-xs text-subtle capitalize">
+                  {[e.branch, e.unit, ...e.modifiers.map((m) => MODIFIERS[m].label)].join(' · ')}
                 </p>
+              </div>
+              <div className="w-24 text-xs">
+                <p className="mb-1 font-mono text-muted tabular-nums">
+                  P{proficiency.level} · {Math.floor(proficiency.progress)}%
+                </p>
+                <Bar value={proficiency.progress} max={100} className="h-1" />
               </div>
               <div className="text-right text-xs">
                 {sessions > 0 ? (

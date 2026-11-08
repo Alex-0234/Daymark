@@ -1,5 +1,15 @@
 export type Unit = 'reps' | 'seconds'
 
+export type Modifier = 'incline' | 'decline' | 'band' | 'explosive'
+
+export const MODIFIERS: Record<Modifier, { label: string; effect: 'easier' | 'harder' | 'power' }> =
+  {
+    incline: { label: 'Incline', effect: 'easier' },
+    decline: { label: 'Decline', effect: 'harder' },
+    band: { label: 'Band Assisted', effect: 'easier' },
+    explosive: { label: 'Explosive', effect: 'power' }
+  }
+
 export type Exercise = {
   id: string
   name: string
@@ -8,6 +18,8 @@ export type Exercise = {
   tier: number
   unit: Unit
   requires: string[]
+  modifiers: Modifier[]
+  isExplosive: boolean
 }
 
 export type Routine = {
@@ -20,6 +32,7 @@ export type Routine = {
 export type SetEntry = {
   id: string
   value: number | null
+  extraWeight: number | null
   done: boolean
 }
 
@@ -37,9 +50,14 @@ export type Draft = {
   exercises: SessionExercise[]
 }
 
+export type LoggedSet = {
+  value: number
+  extraWeight: number
+}
+
 export type LoggedExercise = {
   exerciseId: string
-  sets: number[]
+  sets: LoggedSet[]
 }
 
 export type Workout = {
