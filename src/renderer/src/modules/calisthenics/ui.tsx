@@ -49,7 +49,8 @@ export function Button({
   variant = 'ghost',
   disabled,
   className = '',
-  title
+  title,
+  type = 'button'
 }: {
   children: React.ReactNode
   onClick?: () => void
@@ -57,6 +58,7 @@ export function Button({
   disabled?: boolean
   className?: string
   title?: string
+  type?: 'button' | 'submit'
 }): React.JSX.Element {
   const styles = {
     primary: 'bg-accent text-accent-fg shadow-panel hover:opacity-90',
@@ -66,6 +68,7 @@ export function Button({
   }
   return (
     <button
+      type={type}
       onClick={onClick}
       disabled={disabled}
       title={title}

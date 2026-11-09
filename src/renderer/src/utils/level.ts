@@ -31,16 +31,28 @@ export const setXp = (
 ): number =>
   Math.sqrt(TIER_XP_REWARDS[exercise.tier] ?? 0) * set.value * (1 + set.extraWeight / bodyweight)
 
-export const workoutXp = (workout: Workout, byId: ExerciseMap): number =>
+// bodyweight: the player's current weight (latest logged, else calibrated, else default).
+// Added weight is worth more the lighter you are, so every workout is scored against it.
+export const workoutXp = (
+  workout: Workout,
+  byId: ExerciseMap,
+  bodyweight = DEFAULT_BODYWEIGHT
+): number =>
   workout.exercises.reduce((total, e) => {
     const exercise = byId[e.exerciseId]
-    return exercise ? total + e.sets.reduce((sum, s) => sum + setXp(exercise, s), 0) : total
+    return exercise
+      ? total + e.sets.reduce((sum, s) => sum + setXp(exercise, s, bodyweight), 0)
+      : total
   }, 0)
 
 export type Level = { level: number; xp: number; needed: number; total: number; progress: number }
 
-export function calculateLevel(workouts: Workout[], byId: ExerciseMap): Level {
-  const total = workouts.reduce((sum, w) => sum + workoutXp(w, byId), 0)
+export function calculateLevel(
+  workouts: Workout[],
+  byId: ExerciseMap,
+  bodyweight = DEFAULT_BODYWEIGHT
+): Level {
+  const total = workouts.reduce((sum, w) => sum + workoutXp(w, byId, bodyweight), 0)
   let level = 0
   let xp = total
   while (level < MAX_LEVEL && xp >= xpNeededForLevel(level)) {
@@ -50,8 +62,6 @@ export function calculateLevel(workouts: Workout[], byId: ExerciseMap): Level {
   const needed = xpNeededForLevel(level)
   return { level, xp, needed, total, progress: level >= MAX_LEVEL ? 1 : xp / needed }
 }
-
-export const calculateEp = (totalXp: number): number => Math.floor(totalXp / 20)
 
 const RANKS: [number, string][] = [
   [80, 'Ascendant'],

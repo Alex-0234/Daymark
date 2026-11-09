@@ -245,7 +245,8 @@ function ExerciseBlock({
 }
 
 function Session({ onBack, onFinish }: Props): React.JSX.Element | null {
-  const { draft, byId, renameWorkout, addExercises, finishWorkout, discardWorkout } = useCali()
+  const { draft, byId, bodyweight, renameWorkout, addExercises, finishWorkout, discardWorkout } =
+    useCali()
   const [picking, setPicking] = useState(false)
   const [rest, setRest] = useState<number | null>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
@@ -254,7 +255,7 @@ function Session({ onBack, onFinish }: Props): React.JSX.Element | null {
 
   const live = draftToWorkout(draft, draft.startedAt)
   const sets = totalSets(live)
-  const xp = Math.round(workoutXp(live, byId))
+  const xp = Math.round(workoutXp(live, byId, bodyweight))
 
   const finish = (): void => {
     const workout = finishWorkout()

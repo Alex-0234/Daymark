@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Search } from 'lucide-react'
+import { Check, Lock, Search } from 'lucide-react'
 import { useCali } from './useCali'
 import { Button, Modal, TierBadge } from './ui'
 import { CATEGORIES } from './utils'
@@ -11,7 +11,7 @@ type Props = {
 }
 
 function ExercisePicker({ onPick, onClose, added = [] }: Props): React.JSX.Element {
-  const { exercises } = useCali()
+  const { exercises, unlocked } = useCali()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [selected, setSelected] = useState<string[]>([])
@@ -87,11 +87,14 @@ function ExercisePicker({ onPick, onClose, added = [] }: Props): React.JSX.Eleme
               </p>
               {list.map((e) => {
                 const isSelected = selected.includes(e.id)
+                const isLocked = !unlocked.has(e.id)
                 return (
                   <button
                     key={e.id}
+                    disabled={isLocked}
+                    title={isLocked ? 'Locked. Unlock it with EP in Exercises.' : undefined}
                     onClick={() => toggle(e.id)}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                       isSelected ? 'bg-raised' : 'hover:bg-raised/60'
                     }`}
                   >
@@ -101,6 +104,7 @@ function ExercisePicker({ onPick, onClose, added = [] }: Props): React.JSX.Eleme
                       }`}
                     >
                       {isSelected && <Check size={11} strokeWidth={3} />}
+                      {isLocked && <Lock size={10} className="text-subtle" />}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm text-fg">{e.name}</span>

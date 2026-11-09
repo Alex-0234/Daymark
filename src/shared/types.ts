@@ -1,4 +1,5 @@
 import type { CaliApi } from './cali'
+import type { MetricsApi } from './metrics'
 
 export type ColumnType = 'text' | 'date' | 'select' | 'repeat'
 
@@ -20,6 +21,8 @@ export type Item = {
   done: boolean
   repeat: number[]
   values: Record<string, string>
+  // Owned by a module: it can be edited but not deleted, and always keeps a repeat.
+  locked: boolean
 }
 
 export type List = {
@@ -40,6 +43,7 @@ export type Api = {
     enable: (id: string) => Promise<void>
   }
   cali: CaliApi
+  metrics: MetricsApi
   lists: {
     all: () => Promise<List[]>
     setColumns: (listId: string, columns: Column[]) => Promise<void>

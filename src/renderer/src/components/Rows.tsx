@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, MoreVertical, Pencil, Plus, Repeat, Trash2, Undo2 } from 'lucide-react'
+import { Check, Lock, MoreVertical, Pencil, Plus, Repeat, Trash2, Undo2 } from 'lucide-react'
 import {
   formatDate,
   formatRepeat,
@@ -55,6 +55,13 @@ function Rows({ list }: Props): React.JSX.Element {
 
   const display = (item: Item, column: Column): React.ReactNode => {
     if (column.key === 'date') return formatDate(item.date)
+    if (column.key === 'title' && item.locked)
+      return (
+        <span className="flex items-center gap-1.5" title="Added by a module, can't be deleted">
+          <span className="truncate">{item.title}</span>
+          <Lock size={11} className="shrink-0 text-subtle" />
+        </span>
+      )
     if (column.type === 'repeat')
       return item.repeat.length > 0 ? (
         <span className="flex items-center gap-1.5 text-fg">
@@ -67,12 +74,14 @@ function Rows({ list }: Props): React.JSX.Element {
     return raw(item, column.key)
   }
 
-  const toggleDay = (item: Item, value: number): void =>
+  const toggleDay = (item: Item, value: number): void => {
+    if (item.locked && item.repeat.length === 1 && item.repeat[0] === value) return
     updateItem(list.id, item.id, {
       repeat: item.repeat.includes(value)
         ? item.repeat.filter((d) => d !== value)
         : [...item.repeat, value]
     })
+  }
 
   const commit = (item: Item, column: Column, value: string): void => {
     setEditing(null)
@@ -232,16 +241,18 @@ function Rows({ list }: Props): React.JSX.Element {
                   {item.done ? <Undo2 size={14} /> : <Check size={14} />}
                   {item.done ? 'Undo' : 'Done'}
                 </button>
-                <button
-                  onClick={() => {
-                    removeItem(list.id, item.id)
-                    setMenu(null)
-                  }}
-                  className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-danger hover:bg-danger/10"
-                >
-                  <Trash2 size={14} />
-                  Delete
-                </button>
+                {!item.locked && (
+                  <button
+                    onClick={() => {
+                      removeItem(list.id, item.id)
+                      setMenu(null)
+                    }}
+                    className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-danger hover:bg-danger/10"
+                  >
+                    <Trash2 size={14} />
+                    Delete
+                  </button>
+                )}
               </div>
             )}
 

@@ -4,6 +4,7 @@ import type { Item, ItemPatch, List } from '../data'
 type ListContextValue = {
   lists: List[]
   loaded: boolean
+  reload: () => Promise<void>
   addItem: (listId: string) => Promise<Item>
   updateItem: (listId: string, itemId: string, patch: ItemPatch) => void
   completeItem: (listId: string, itemId: string) => void

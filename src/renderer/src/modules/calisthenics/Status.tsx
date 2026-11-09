@@ -1,10 +1,11 @@
 import { Flame, Play } from 'lucide-react'
 import { useCali } from './useCali'
-import { MAX_LEVEL, calculateEp, calculateLevel, rankTitle, workoutXp } from '../../utils/level'
+import { MAX_LEVEL, calculateLevel, rankTitle, workoutXp } from '../../utils/level'
 import { AP_STATES, STATS, calculatePlayerStats } from '../../utils/stats'
 import { Bar, Button, Card, Elapsed, Label, TierBadge } from './ui'
+import SetsChart from './SetsChart'
 import { CATEGORIES, formatDay, formatDuration, formatValue, totalSets } from './utils'
-import { day, toDay } from '../../data'
+import { day, toDay, weekday } from '../../data'
 
 function LevelRing({ level, progress }: { level: number; progress: number }): React.JSX.Element {
   const r = 45
@@ -36,16 +37,34 @@ function LevelRing({ level, progress }: { level: number; progress: number }): Re
   )
 }
 
-function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
-  const { workouts, exercises, byId, progress, draft } = useCali()
-  const stats = calculatePlayerStats(workouts, exercises, progress)
-  const level = calculateLevel(workouts, byId)
-  const ep = calculateEp(level.total)
+function Status({
+  onStart,
+  onCalibrate
+}: {
+  onStart: () => void
+  onCalibrate: () => void
+}): React.JSX.Element {
+  const {
+    workouts,
+    exercises,
+    byId,
+    progress,
+    draft,
+    ep,
+    rating,
+    streak,
+    schedule,
+    calibration,
+    bodyweight
+  } = useCali()
+  const stats = calculatePlayerStats(workouts, exercises, progress, bodyweight)
+  const name = calibration?.profile?.name
+  const level = calculateLevel(workouts, byId, bodyweight)
   const power = Math.round(STATS.reduce((a, s) => a + stats[s.key], 0) / STATS.length)
 
   const week = Array.from({ length: 7 }, (_, i) => day(i - 6))
   const trainedDays = new Set(workouts.map((w) => toDay(new Date(w.finishedAt))))
-  const thisWeek = week.filter((d) => trainedDays.has(d)).length
+  const isScheduled = (d: string): boolean => schedule.includes(weekday(d))
 
   const bests = CATEGORIES.map((c) => {
     let best: { id: string; tier: number; value: number } | null = null
@@ -66,7 +85,7 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
         <div className="pointer-events-none absolute -top-20 -left-20 h-56 w-56 rounded-full bg-accent/5 blur-3xl" />
 
         <div className="relative flex items-center justify-between border-b border-line px-5 py-3">
-          <Label>Status</Label>
+          <Label>{name ? `Status · ${name}` : 'Status'}</Label>
           <span className="font-mono text-[11px] text-subtle tabular-nums">PWR {power}</span>
         </div>
 
@@ -84,13 +103,14 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
           </div>
         </div>
 
-        <div className="relative grid grid-cols-3 gap-px px-5 pt-4 pb-1">
+        <div className="relative grid grid-cols-4 gap-px px-5 pt-4 pb-1">
           {[
-            ['EP', ep],
-            ['Sessions', workouts.length],
-            ['Total XP', Math.round(level.total)]
-          ].map(([label, value]) => (
-            <div key={label}>
+            ['EP', ep, 'Evolution points, spent on unlocking exercises'],
+            ['Rating', rating, 'Rises when you finish workouts harder than your current rating'],
+            ['Streak', streak.current, `Best ${streak.highest}. A missed scheduled day resets it.`],
+            ['Sessions', workouts.length, `${Math.round(level.total)} total XP`]
+          ].map(([label, value, hint]) => (
+            <div key={label} title={String(hint)}>
               <Label>{label}</Label>
               <p className="font-mono text-sm font-semibold text-fg tabular-nums">{value}</p>
             </div>
@@ -161,24 +181,50 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
           )}
         </Card>
 
+        {calibration?.skipped && (
+          <Card className="flex items-center gap-4 p-4 2xl:col-span-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-fg">Calibration skipped</p>
+              <p className="text-xs text-muted">
+                Benchmark yourself to unlock exercises you can already do and get bonus EP.
+              </p>
+            </div>
+            <Button variant="outline" onClick={onCalibrate}>
+              Calibrate
+            </Button>
+          </Card>
+        )}
+
         <Card className="p-4 2xl:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <Label>Last 7 days</Label>
-            <span className="flex items-center gap-1 text-xs text-muted">
+            <span
+              title={`Best streak ${streak.highest}`}
+              className="flex items-center gap-1 text-xs text-muted"
+            >
               <Flame size={13} className="text-orange-400" />
-              {thisWeek} sessions
+              {streak.current} streak{streak.dueToday && ' · train today to keep it'}
             </span>
           </div>
           <div className="grid grid-cols-7 gap-1.5">
             {week.map((d) => {
               const trained = trainedDays.has(d)
+              const scheduled = isScheduled(d)
+              const missed = scheduled && !trained && d < day()
               return (
                 <div key={d} className="flex flex-col items-center gap-1.5">
                   <div
+                    title={
+                      trained ? 'Trained' : missed ? 'Missed' : scheduled ? 'Scheduled' : 'Rest day'
+                    }
                     className={`h-7 w-full rounded-md border ${
                       trained
                         ? 'border-accent bg-accent shadow-[0_0_10px_-2px_var(--accent)]'
-                        : 'border-line bg-bg'
+                        : missed
+                          ? 'border-danger/50 bg-danger/10'
+                          : scheduled
+                            ? 'border-dashed border-muted bg-bg'
+                            : 'border-line bg-bg'
                     }`}
                   />
                   <span className="text-[10px] text-subtle">
@@ -189,6 +235,8 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
             })}
           </div>
         </Card>
+
+        <SetsChart />
 
         <Card className="p-4">
           <Label className="mb-3">Personal bests</Label>
@@ -224,7 +272,7 @@ function Status({ onStart }: { onStart: () => void }): React.JSX.Element {
                   </span>
                 </span>
                 <span className="shrink-0 font-mono text-muted">
-                  +{Math.round(workoutXp(w, byId))}
+                  +{Math.round(workoutXp(w, byId, bodyweight))}
                 </span>
               </li>
             ))}

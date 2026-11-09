@@ -15,6 +15,7 @@ type ItemRow = {
   done: number
   repeat: string
   data: string
+  locked: number
 }
 
 export const db = new Database(join(app.getPath('userData'), 'app.sqlite'))
@@ -48,7 +49,8 @@ const migrations: (() => void)[] = [
       setColumns(l.id, columns)
     }
   },
-  () => db.exec('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
+  () => db.exec('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)'),
+  () => db.exec('ALTER TABLE items ADD COLUMN locked INTEGER NOT NULL DEFAULT 0')
 ]
 
 const version = db.pragma('user_version', { simple: true }) as number
@@ -83,7 +85,8 @@ const toItem = (r: ItemRow): Item => ({
   date: r.date,
   done: r.done === 1,
   repeat: JSON.parse(r.repeat),
-  values: JSON.parse(r.data)
+  values: JSON.parse(r.data),
+  locked: r.locked === 1
 })
 
 const getItem = (id: string): Item =>
@@ -117,7 +120,9 @@ export function createItem(listId: string): Item {
 }
 
 export function updateItem(id: string, patch: ItemPatch): Item {
-  const item = { ...getItem(id), ...patch }
+  const current = getItem(id)
+  const item = { ...current, ...patch }
+  if (current.locked && item.repeat.length === 0) item.repeat = current.repeat
   db.prepare(
     'UPDATE items SET title = ?, date = ?, done = ?, repeat = ?, data = ? WHERE id = ?'
   ).run(
@@ -131,6 +136,20 @@ export function updateItem(id: string, patch: ItemPatch): Item {
   return item
 }
 
+// Inserts a module-owned item once; the user's later edits to it are kept.
+export function ensureLockedItem(item: Omit<Item, 'done' | 'locked'>): void {
+  db.prepare(
+    'INSERT OR IGNORE INTO items (id, list_id, title, date, repeat, data, locked) VALUES (?, ?, ?, ?, ?, ?, 1)'
+  ).run(
+    item.id,
+    item.listId,
+    item.title,
+    item.date,
+    JSON.stringify(item.repeat),
+    JSON.stringify(item.values)
+  )
+}
+
 export function removeItem(id: string): void {
-  db.prepare('DELETE FROM items WHERE id = ?').run(id)
+  db.prepare('DELETE FROM items WHERE id = ? AND locked = 0').run(id)
 }

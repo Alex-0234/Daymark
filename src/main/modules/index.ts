@@ -2,8 +2,9 @@ import { ipcMain } from 'electron'
 import { db, getSetting, setSetting } from '../db'
 import type { MainModule } from './types'
 import { calisthenics } from './calisthenics'
+import { metrics } from './metrics'
 
-const modules: MainModule[] = [calisthenics]
+const modules: MainModule[] = [calisthenics, metrics]
 const core = ['tasks', 'hobbies']
 
 const enabled = (): string[] => getSetting('modules', core)

@@ -3,14 +3,17 @@ import Rail from './components/Rail'
 import Page from './components/Page'
 import Dashboard from './components/Dashboard'
 import { coreFeatures, features } from './features'
+import { useList } from './context/useList'
 
 const modules: Record<string, React.LazyExoticComponent<() => React.JSX.Element>> = {
-  workout: lazy(() => import('./modules/calisthenics'))
+  workout: lazy(() => import('./modules/calisthenics')),
+  metrics: lazy(() => import('./modules/metrics'))
 }
 
 function App(): React.JSX.Element {
   const [enabled, setEnabled] = useState(coreFeatures)
   const [active, setActive] = useState('dashboard')
+  const { reload } = useList()
   const feature = features.find((f) => f.id === active)
   const Module = modules[active]
 
@@ -20,6 +23,7 @@ function App(): React.JSX.Element {
 
   const enable = async (id: string): Promise<void> => {
     await window.api.modules.enable(id)
+    await reload() // modules can add their own list items (e.g. the calisthenics hobby)
     setEnabled((prev) => (prev.includes(id) ? prev : [...prev, id]))
     setActive(id)
   }

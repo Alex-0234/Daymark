@@ -9,6 +9,7 @@ import Library from './Library'
 import History from './History'
 import Session from './Session'
 import Summary from './Summary'
+import Onboarding from './Onboarding'
 import type { Routine, Workout } from './utils'
 
 const TABS = [
@@ -21,15 +22,21 @@ const TABS = [
 type Tab = (typeof TABS)[number]['id']
 
 function Shell(): React.JSX.Element {
-  const { loaded, draft, startWorkout } = useCali()
+  const { loaded, draft, startWorkout, calibration } = useCali()
   const [tab, setTab] = useState<Tab>('status')
   const [inSession, setInSession] = useState(false)
   const [summary, setSummary] = useState<Workout | null>(null)
+  const [onboarding, setOnboarding] = useState(false)
 
   const start = (routine?: Routine): void => {
     if (!draft) startWorkout(routine)
     setInSession(true)
   }
+
+  // Shown automatically until calibration is done or skipped. Once begun, it stays up
+  // through its results screen even though the calibration is already saved.
+  if (onboarding || (loaded && !calibration))
+    return <Onboarding onBegin={() => setOnboarding(true)} onClose={() => setOnboarding(false)} />
 
   if (draft && inSession)
     return (
@@ -86,7 +93,7 @@ function Shell(): React.JSX.Element {
           {!loaded ? (
             <p className="py-16 text-center text-sm text-subtle">Loading…</p>
           ) : tab === 'status' ? (
-            <Status onStart={() => start()} />
+            <Status onStart={() => start()} onCalibrate={() => setOnboarding(true)} />
           ) : tab === 'train' ? (
             <Train onStart={start} onResume={() => setInSession(true)} />
           ) : tab === 'library' ? (

@@ -16,12 +16,14 @@ const groupSets = (workout: Workout): Map<string, number[]> => {
 }
 
 // Training an exercise also credits easier (lower or equal tier) exercises in its category.
+// `baseline` is the onboarding benchmark, which workouts build on top of.
 export function buildProgress(
   workouts: Workout[],
   exercises: Exercise[],
-  byId: ExerciseMap
+  byId: ExerciseMap,
+  baseline: Progress = {}
 ): Progress {
-  const progress: Progress = {}
+  const progress: Progress = { ...baseline }
 
   for (const workout of workouts)
     for (const [exerciseId, sets] of groupSets(workout)) {

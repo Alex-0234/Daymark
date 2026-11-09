@@ -1,6 +1,7 @@
 import { Trophy } from 'lucide-react'
 import { useCali } from './useCali'
 import { calculateLevel, setXp, workoutXp } from '../../utils/level'
+import { calculatePlayerRating, calculateWorkoutEP } from '../../utils/progression'
 import { Bar, Button, Label, Modal, TierBadge } from './ui'
 import { formatDuration, formatSet, totalReps, totalSets, type Workout } from './utils'
 
@@ -11,13 +12,13 @@ function Summary({
   workout: Workout
   onClose: () => void
 }): React.JSX.Element {
-  const { byId, workouts } = useCali()
-  const xp = Math.round(workoutXp(workout, byId))
-  const level = calculateLevel(workouts, byId)
-  const before = calculateLevel(
-    workouts.filter((w) => w.id !== workout.id),
-    byId
-  )
+  const { byId, workouts, rating, streak, bodyweight } = useCali()
+  const others = workouts.filter((w) => w.id !== workout.id)
+  const xp = Math.round(workoutXp(workout, byId, bodyweight))
+  const ep = calculateWorkoutEP(workout, byId)
+  const ratingChange = rating - calculatePlayerRating(others, byId)
+  const level = calculateLevel(workouts, byId, bodyweight)
+  const before = calculateLevel(others, byId, bodyweight)
 
   return (
     <Modal
@@ -55,6 +56,9 @@ function Summary({
 
         <div className="grid grid-cols-3 gap-2">
           {[
+            ['EP', `+${ep}`],
+            ['Rating', `${rating} (${ratingChange >= 0 ? '+' : ''}${ratingChange})`],
+            ['Streak', streak.current],
             ['Duration', formatDuration(workout.duration)],
             ['Sets', totalSets(workout)],
             ['Reps', totalReps(workout, byId)]
@@ -78,7 +82,8 @@ function Summary({
                 </span>
                 {exercise && (
                   <span className="w-12 text-right font-mono text-xs text-subtle tabular-nums">
-                    +{Math.round(e.sets.reduce((sum, s) => sum + setXp(exercise, s), 0))}
+                    +
+                    {Math.round(e.sets.reduce((sum, s) => sum + setXp(exercise, s, bodyweight), 0))}
                   </span>
                 )}
               </li>

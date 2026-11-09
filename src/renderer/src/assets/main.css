@@ -31,6 +31,11 @@
   --accent: #fafafa;
   --accent-fg: #09090b;
   --danger: #f05252;
+  /* Chart series (categorical, fixed order), stepped for dark surfaces. Validated. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
   --glow: 0 0 16px rgb(255 255 255 / 0.22);
   --shadow-panel:
     inset 0 1px 0 rgb(255 255 255 / 0.03), 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.9);
@@ -83,6 +88,10 @@
 
 [data-theme='light'] {
   color-scheme: light;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
   --bg: #f4f4f5;
   --panel: #ffffff;
   --raised: #f4f4f5;

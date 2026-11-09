@@ -16,7 +16,17 @@ const api: Api = {
     saveWorkout: (workout) => ipcRenderer.invoke('cali:saveWorkout', workout),
     removeWorkout: (id) => ipcRenderer.invoke('cali:removeWorkout', id),
     draft: () => ipcRenderer.invoke('cali:draft'),
-    saveDraft: (draft) => ipcRenderer.invoke('cali:saveDraft', draft)
+    saveDraft: (draft) => ipcRenderer.invoke('cali:saveDraft', draft),
+    unlocks: () => ipcRenderer.invoke('cali:unlocks'),
+    saveUnlock: (exerciseId, cost) => ipcRenderer.invoke('cali:saveUnlock', exerciseId, cost),
+    calibration: () => ipcRenderer.invoke('cali:calibration'),
+    saveCalibration: (calibration) => ipcRenderer.invoke('cali:saveCalibration', calibration)
+  },
+  metrics: {
+    entries: () => ipcRenderer.invoke('metrics:entries'),
+    save: (entry) => ipcRenderer.invoke('metrics:save', entry),
+    remove: (date) => ipcRenderer.invoke('metrics:remove', date),
+    latestWeight: () => ipcRenderer.invoke('metrics:latestWeight')
   },
   lists: {
     all: () => ipcRenderer.invoke('lists:all'),

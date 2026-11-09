@@ -11,12 +11,16 @@ export function ListProvider({ children }: { children: React.ReactNode }): React
     latest.current = lists
   }, [lists])
 
+  const apply = (data: List[]): void => {
+    setLists(data)
+    setLoaded(true)
+  }
+
   useEffect(() => {
-    window.api.lists.all().then((data) => {
-      setLists(data)
-      setLoaded(true)
-    })
+    window.api.lists.all().then(apply)
   }, [])
+
+  const reload = (): Promise<void> => window.api.lists.all().then(apply)
 
   const update = (listId: string, change: (list: List) => List): void =>
     setLists((prev) => prev.map((l) => (l.id === listId ? change(l) : l)))
@@ -28,6 +32,8 @@ export function ListProvider({ children }: { children: React.ReactNode }): React
   }
 
   const updateItem = (listId: string, itemId: string, patch: ItemPatch): void => {
+    const item = latest.current.find((l) => l.id === listId)?.items.find((i) => i.id === itemId)
+    if (item?.locked && patch.repeat?.length === 0) return
     update(listId, (l) => ({
       ...l,
       items: l.items.map((i) => (i.id === itemId ? { ...i, ...patch } : i))
@@ -48,6 +54,8 @@ export function ListProvider({ children }: { children: React.ReactNode }): React
   }
 
   const removeItem = (listId: string, itemId: string): void => {
+    const item = latest.current.find((l) => l.id === listId)?.items.find((i) => i.id === itemId)
+    if (item?.locked) return
     update(listId, (l) => ({ ...l, items: l.items.filter((i) => i.id !== itemId) }))
     window.api.items.remove(itemId)
   }
@@ -70,6 +78,7 @@ export function ListProvider({ children }: { children: React.ReactNode }): React
       value={{
         lists,
         loaded,
+        reload,
         addItem,
         updateItem,
         completeItem,

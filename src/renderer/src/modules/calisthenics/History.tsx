@@ -6,7 +6,7 @@ import { Button, Card, TierBadge } from './ui'
 import { formatDay, formatDuration, formatSet, totalReps, totalSets } from './utils'
 
 function History(): React.JSX.Element {
-  const { workouts, byId, removeWorkout } = useCali()
+  const { workouts, byId, removeWorkout, bodyweight } = useCali()
   const [deleting, setDeleting] = useState<string | null>(null)
 
   if (workouts.length === 0)
@@ -25,7 +25,7 @@ function History(): React.JSX.Element {
               </p>
             </div>
             <span className="font-mono text-sm font-semibold text-fg">
-              +{Math.round(workoutXp(w, byId))} XP
+              +{Math.round(workoutXp(w, byId, bodyweight))} XP
             </span>
             {deleting === w.id ? (
               <Button variant="danger" onClick={() => removeWorkout(w.id)}>

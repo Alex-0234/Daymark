@@ -63,12 +63,22 @@ export const totalReps = (workout: Workout, byId: ExerciseMap): number =>
     0
   )
 
+const completion = (draft: Draft): number => {
+  const planned = draft.exercises.reduce((sum, e) => sum + e.sets.length, 0)
+  const done = draft.exercises.reduce(
+    (sum, e) => sum + e.sets.filter((s) => s.done && s.value).length,
+    0
+  )
+  return planned > 0 ? done / planned : 1
+}
+
 export const draftToWorkout = (draft: Draft, finishedAt: string): Workout => ({
   id: draft.id,
   name: draft.name.trim() || 'Workout',
   startedAt: draft.startedAt,
   finishedAt,
   duration: Math.max(0, Math.round((Date.parse(finishedAt) - Date.parse(draft.startedAt)) / 1000)),
+  completion: completion(draft),
   exercises: draft.exercises
     .map((e) => ({
       exerciseId: e.exerciseId,
