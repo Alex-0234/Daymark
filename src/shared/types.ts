@@ -37,7 +37,15 @@ export type ListTemplate = Omit<List, 'items'>
 
 export type ItemPatch = Partial<Pick<Item, 'title' | 'date' | 'done' | 'repeat' | 'values'>>
 
+// null = the user canceled the file dialog.
+export type ExportResult = { path: string } | null
+export type ImportResult = { ok: true; savedTo: string } | { ok: false; error: string } | null
+
 export type Api = {
+  data: {
+    export: (includeMetrics: boolean) => Promise<ExportResult>
+    import: () => Promise<ImportResult>
+  }
   modules: {
     enabled: () => Promise<string[]>
     enable: (id: string) => Promise<void>

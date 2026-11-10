@@ -227,8 +227,17 @@ function Status({
                             : 'border-line bg-bg'
                     }`}
                   />
-                  <span className="text-[10px] text-subtle">
-                    {new Date(`${d}T00:00`).toLocaleDateString(undefined, { weekday: 'narrow' })}
+                  <span
+                    className={`flex flex-col items-center text-[10px] leading-tight tabular-nums ${
+                      d === day() ? 'glow font-semibold text-fg' : 'text-subtle'
+                    }`}
+                  >
+                    <span>
+                      {d === day()
+                        ? 'Today'
+                        : new Date(`${d}T00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
+                    </span>
+                    <span>{new Date(`${d}T00:00`).getDate()}</span>
                   </span>
                 </div>
               )

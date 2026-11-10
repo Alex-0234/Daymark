@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerIpc } from './ipc'
 import { setupModules } from './modules'
+import { registerBackupIpc } from './backup'
 
 function createWindow(): void {
   // Create the browser window.
@@ -54,6 +55,7 @@ app.whenReady().then(() => {
 
   registerIpc()
   setupModules()
+  registerBackupIpc()
 
   createWindow()
 

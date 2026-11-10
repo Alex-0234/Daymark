@@ -8,7 +8,7 @@ A local-first desktop app for organizing tasks and hobbies, with optional add-on
 
 - **Local-first:** all personal data is stored on the user's device in a single SQLite file. No accounts, no cloud.
 - **Modular:** a lightweight core for everyday organization, plus optional add-on modules the user can turn on from the **+** button in the sidebar.
-- **Portable data:** the database can be exported as a backup and imported again on any device (planned).
+- **Portable data:** the database can be exported as a backup and imported again on any device (Settings → Data).
 - **External APIs only for public data** (exercise and food databases). Personal data is never sent to them.
 
 ## Features
@@ -38,9 +38,9 @@ A local-first desktop app for organizing tasks and hobbies, with optional add-on
 ### Data
 
 - [x] SQLite database with versioned migrations
-- [ ] Export the database as a backup file
-- [ ] Import a backup (with validation and schema migration)
-- [ ] Choose whether body metrics are included in an export
+- [x] Export the database as a backup file
+- [x] Import a backup (with validation and schema migration)
+- [x] Choose whether body metrics are included in an export
 
 ## Calisthenics module
 
@@ -174,8 +174,8 @@ npx @electron/rebuild
 - The database is stored in the app's user data folder (`app.getPath('userData')/app.sqlite`, on Windows `%APPDATA%\daymark\app.sqlite`).
 - Core schema changes are tracked with `PRAGMA user_version`; each add-on module tracks its own version in the `settings` table.
 - Changing a list template's columns doesn't update lists that already exist. Use a migration, or delete `app.sqlite` during development.
-- **Export** (planned) will use SQLite's backup API, so it's safe while the app is running.
-- **Import** (planned) will check file integrity (`PRAGMA integrity_check`) and the schema version, keep a copy of the current database, then replace it and run any needed migrations.
+- **Export** (Settings → Data) uses SQLite's backup API, so it's safe while the app is running. With "Include body metrics" off, the `metrics_entries` table is dropped from the copy and vacuumed. Code: `src/main/backup.ts`.
+- **Import** checks file integrity (`PRAGMA integrity_check`), that it is a Daymark database and that its core and module schema versions aren't newer than the app. It saves the current database to `userData/backups/before-import-<time>.sqlite`, swaps the backup in, reopens it and runs any needed migrations. No restart needed.
 
 ## Privacy
 
@@ -192,7 +192,7 @@ npx @electron/rebuild
 5. [x] Themes and app shell (rail, dashboard, settings)
 6. [x] Calisthenics module: logging, routines, library, history, status screen
 7. [x] Calisthenics: exercise database, stat formulas, calibration, EP unlocks, rating, streak, skill tree
-8. [ ] Export / import
+8. [x] Export / import
 9. [x] Body metrics module
 10. [ ] External API integration (exercises, food)
 11. [ ] Optional: database encryption (SQLCipher)

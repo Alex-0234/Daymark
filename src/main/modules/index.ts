@@ -4,10 +4,10 @@ import type { MainModule } from './types'
 import { calisthenics } from './calisthenics'
 import { metrics } from './metrics'
 
-const modules: MainModule[] = [calisthenics, metrics]
+export const modules: MainModule[] = [calisthenics, metrics]
 const core = ['tasks', 'hobbies']
 
-const enabled = (): string[] => getSetting('modules', core)
+export const enabled = (): string[] => getSetting('modules', core)
 
 const install = (module: MainModule): void => {
   const key = `module.${module.id}.version`
@@ -21,11 +21,14 @@ const install = (module: MainModule): void => {
   module.seed?.()
 }
 
+// Runs migrations and seeds of every enabled module. Also used after an import.
+export function installEnabled(): void {
+  for (const module of modules) if (enabled().includes(module.id)) install(module)
+}
+
 export function setupModules(): void {
-  for (const module of modules) {
-    module.registerIpc()
-    if (enabled().includes(module.id)) install(module)
-  }
+  for (const module of modules) module.registerIpc()
+  installEnabled()
 
   ipcMain.handle('modules:enabled', () => enabled())
   ipcMain.handle('modules:enable', (_, id: string) => {

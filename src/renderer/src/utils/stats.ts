@@ -139,7 +139,7 @@ function calculateAP(
   else if (acwr <= 1.3) acwrScore = 1.0
   else if (acwr < 1.8) acwrScore = 1.0 - ((acwr - 1.3) / 0.5) * 0.8
   else acwrScore = 0.2
-
+    
   const chronicFactor = Math.min(1, chronicLoad / AP_REF_CHRONIC)
 
   let state: ApState = 'adapting'

@@ -3,6 +3,10 @@ import { electronAPI } from '@electron-toolkit/preload'
 import type { Api } from '../shared/types'
 
 const api: Api = {
+  data: {
+    export: (includeMetrics) => ipcRenderer.invoke('data:export', includeMetrics),
+    import: () => ipcRenderer.invoke('data:import')
+  },
   modules: {
     enabled: () => ipcRenderer.invoke('modules:enabled'),
     enable: (id) => ipcRenderer.invoke('modules:enable', id)

@@ -18,9 +18,10 @@ type ItemRow = {
   locked: number
 }
 
-export const db = new Database(join(app.getPath('userData'), 'app.sqlite'))
-db.pragma('journal_mode = WAL')
-db.pragma('foreign_keys = ON')
+export const dbPath = join(app.getPath('userData'), 'app.sqlite')
+
+// `let` so an imported backup can replace the open database in place (see backup.ts).
+export let db: Database.Database
 
 const migrations: (() => void)[] = [
   () =>
@@ -53,13 +54,29 @@ const migrations: (() => void)[] = [
   () => db.exec('ALTER TABLE items ADD COLUMN locked INTEGER NOT NULL DEFAULT 0')
 ]
 
-const version = db.pragma('user_version', { simple: true }) as number
-migrations.slice(version).forEach((migrate, i) =>
-  db.transaction(() => {
-    migrate()
-    db.pragma(`user_version = ${version + i + 1}`)
-  })()
-)
+export const schemaVersion = migrations.length
+
+// Opens the database, runs core migrations and seeds the list templates.
+export function openDb(): void {
+  db = new Database(dbPath)
+  db.pragma('journal_mode = WAL')
+  db.pragma('foreign_keys = ON')
+
+  const version = db.pragma('user_version', { simple: true }) as number
+  migrations.slice(version).forEach((migrate, i) =>
+    db.transaction(() => {
+      migrate()
+      db.pragma(`user_version = ${version + i + 1}`)
+    })()
+  )
+
+  const insertList = db.prepare(
+    'INSERT OR IGNORE INTO lists (id, feature, name, columns) VALUES (?, ?, ?, ?)'
+  )
+  for (const t of templates) insertList.run(t.id, t.feature, t.name, JSON.stringify(t.columns))
+}
+
+openDb()
 
 export function getSetting<T>(key: string, fallback: T): T {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as
@@ -72,11 +89,6 @@ export function setSetting(key: string, value: unknown): void {
     'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
   ).run(key, JSON.stringify(value))
 }
-
-const insertList = db.prepare(
-  'INSERT OR IGNORE INTO lists (id, feature, name, columns) VALUES (?, ?, ?, ?)'
-)
-for (const t of templates) insertList.run(t.id, t.feature, t.name, JSON.stringify(t.columns))
 
 const toItem = (r: ItemRow): Item => ({
   id: r.id,
