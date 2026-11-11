@@ -199,4 +199,4 @@ npx @electron/rebuild
 
 ## License
 
-TBD
+[MIT](LICENSE)
